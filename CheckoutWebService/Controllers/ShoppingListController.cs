@@ -18,23 +18,59 @@ namespace CheckoutWebService.Controllers
         [HttpPost]
         public IHttpActionResult AddItem(Drink item)
         {
-            if (ModelState.IsValid)
+            try
             {
-                int newQuantity = _repository.Add(item);
-                return Ok(newQuantity);
+                if (ModelState.IsValid)
+                {
+                    int newQuantity = _repository.Add(item);
+                    return Ok(newQuantity);
+                }
+                else
+                {
+                    return BadRequest(ModelState);
+                }
             }
-            else
+            catch(System.Exception e)
             {
-                return BadRequest(ModelState);
+                //a log here may be usefull
+                return InternalServerError(e);
             }
         }
 
         [HttpPut]
         public IHttpActionResult UpdateItem(Drink item)
         {
-            if (ModelState.IsValid)
+            try
             {
-                if (_repository.Update(item))
+                if (ModelState.IsValid)
+                {
+                    if (_repository.Update(item))
+                    {
+                        return Ok();
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
+                else
+                {
+                    return BadRequest(ModelState);
+                }
+            }
+            catch (System.Exception e)
+            {
+                //a log here may be usefull
+                return InternalServerError(e);
+            }
+        }
+
+        [HttpDelete]
+        public IHttpActionResult DeleteItem(string itemName)
+        {
+            try
+            {
+                if (_repository.Delete(itemName))
                 {
                     return Ok();
                 }
@@ -43,37 +79,33 @@ namespace CheckoutWebService.Controllers
                     return NotFound();
                 }
             }
-            else
+            catch (System.Exception e)
             {
-                return BadRequest(ModelState);
-            }
-        }
-
-        [HttpDelete]
-        public IHttpActionResult DeleteItem(string itemName)
-        {
-            if (_repository.Delete(itemName))
-            {
-                return Ok();
-            }
-            else
-            {
-                return NotFound();
+                //a log here may be usefull
+                return InternalServerError(e);
             }
         }
 
         [HttpGet]
         public IHttpActionResult GetItem(string id)
         {
-            Drink result = _repository.GetDrink(id);
+            try
+            {
+                Drink result = _repository.GetDrink(id);
 
-            if (result != null)
-            {
-                return Ok(result);
+                if (result != null)
+                {
+                    return Ok(result);
+                }
+                else
+                {
+                    return NotFound();
+                }
             }
-            else
+            catch (System.Exception e)
             {
-                return NotFound();
+                //a log here may be usefull
+                return InternalServerError(e);
             }
         }
 
@@ -81,34 +113,42 @@ namespace CheckoutWebService.Controllers
         [BasicAuthentication("ApiUsername", "ApiPassword")]
         public IHttpActionResult GetList(int pageNo = 1, int pageSize = 50)
         {
-            // Determine the number of records to skip
-            int skip = (pageNo - 1) * pageSize;
-
-            // Get total number of records
-            int total = _repository.List.Count();
-
-            // Select the records based on paging parameters
-            var items = _repository.List
-                .OrderBy(c => c.Key)
-                .Skip(skip)
-                .Take(pageSize)
-                .ToList();
-
-            // Get the page links
-            var linkBuilder = new PageLinkBuilder(Url, "DefaultApi", null, pageNo, pageSize, total);
-
-            // Return the list of customers
-            return Ok(new
+            try
             {
-                Data = items,
-                Paging = new
+                // Determine the number of itmes to skip
+                int skip = (pageNo - 1) * pageSize;
+
+                // Get total number of items
+                int total = _repository.List.Count();
+
+                // Select the items based on paging parameters
+                var items = _repository.List
+                    .OrderBy(c => c.Key)
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Get the page links
+                var linkBuilder = new PageLinkBuilder(Url, "DefaultApi", null, pageNo, pageSize, total);
+
+                // Return the list of items
+                return Ok(new
                 {
-                    First = linkBuilder.FirstPage,
-                    Previous = linkBuilder.PreviousPage,
-                    Next = linkBuilder.NextPage,
-                    Last = linkBuilder.LastPage
-                }
-            });
+                    Data = items,
+                    Paging = new
+                    {
+                        First = linkBuilder.FirstPage,
+                        Previous = linkBuilder.PreviousPage,
+                        Next = linkBuilder.NextPage,
+                        Last = linkBuilder.LastPage
+                    }
+                });
+            }
+            catch (System.Exception e)
+            {
+                //a log here may be usefull
+                return InternalServerError(e);
+            }
         }
     }
 }
